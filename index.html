@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="referrer" content="no-referrer">
+<title>对账管理 - 二代架构</title>
+<script> const SCRIPT_URL = "https://rmm.veokgb1.top"; </script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@600;700&family=Noto+Sans+SC:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1a1a2e;--ink-mid:#3a3a5c;--ink-light:#6b6b8a;
+  --paper:#faf8f4;--paper-warm:#f3ede3;
+  --accent:#c8452a;--accent-lt:#e8735a;--gold:#c9a84c;
+  --green-bg:#e2f0d9;--green-txt:#38761d;
+  --red-bg:#fce8e6;--red-txt:#990000;
+  --blue-bg:#e3f2fd;--blue-txt:#1565c0;
+  --border:#ddd8cc;--radius:12px;
+  --shadow:0 2px 16px rgba(26,26,46,.08);
+  --shadow-lg:0 8px 40px rgba(26,26,46,.16);
+  --serif:'Noto Serif SC',serif;--sans:'Noto Sans SC',sans-serif;--mono:'JetBrains Mono',monospace;
+  --header-h:56px;--tab-h:56px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+
+/* SCREENS */
+.screen{display:none;min-height:100vh}
+.screen.active{display:flex;flex-direction:column}
+
+/* LOGIN */
+#screen-login{align-items:center;justify-content:center;background:linear-gradient(145deg,#1a1a2e 0%,#2d1b4e 60%,#1a2e2e 100%)}
+.login-card{background:var(--paper);border-radius:20px;padding:48px 44px;width:100%;max-width:420px;box-shadow:var(--shadow-lg)}
+.login-logo{font-family:var(--serif);font-size:32px;font-weight:700;color:var(--accent);letter-spacing:-1px;margin-bottom:6px}
+.login-logo span{color:var(--ink-light);font-family:var(--sans);font-weight:300;font-size:14px;display:block;margin-top:2px}
+.login-subtitle{font-size:13px;color:var(--ink-light);margin-bottom:32px}
+.field{margin-bottom:18px}
+.field label{display:block;font-size:11px;font-weight:500;color:var(--ink-light);letter-spacing:.6px;text-transform:uppercase;margin-bottom:7px}
+.field input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:9px;font-family:var(--sans);font-size:14px;background:var(--paper-warm);color:var(--ink);outline:none;transition:border-color .2s}
+.field input:focus{border-color:var(--accent)}
+.btn-login{width:100%;padding:14px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-family:var(--serif);font-size:16px;font-weight:600;cursor:pointer;transition:background .2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:6px}
+.btn-login:hover{background:var(--accent-lt)}
+.btn-login:disabled{background:var(--border);cursor:not-allowed}
+.login-error{margin-top:14px;padding:10px 14px;background:var(--red-bg);color:var(--red-txt);border-radius:8px;font-size:13px;display:none}
+.login-error.show{display:block}
+.spinner-sm{width:16px;height:16px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:none}
+
+/* APP SHELL */
+.app-header{position:sticky;top:0;z-index:200;background:var(--ink);height:var(--header-h);display:flex;align-items:center;padding:0 20px;gap:16px;border-bottom:1px solid rgba(255,255,255,.06)}
+.app-logo{font-family:var(--serif);font-size:18px;color:#fff;letter-spacing:-.5px;flex-shrink:0}
+.app-logo em{color:var(--accent-lt);font-style:normal}
+.header-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.user-badge{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.7);font-size:13px}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:600;flex-shrink:0}
+.btn-hdr{padding:6px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:6px;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;font-family:var(--sans);transition:background .2s;white-space:nowrap}
+.btn-hdr:hover{background:rgba(255,255,255,.16);color:#fff}
+.btn-pro{background:linear-gradient(135deg,#c9a84c,#e8c56a);border:none;color:#1a1a2e;font-weight:600;display:flex;align-items:center;gap:6px}
+.btn-pro:hover{opacity:.9;color:#1a1a2e}
+
+/* BOTTOM TABS */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;z-index:200;background:#fff;border-top:1.5px solid var(--border);display:flex;height:var(--tab-h);box-shadow:0 -2px 12px rgba(26,26,46,.06)}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;cursor:pointer;font-family:var(--sans);font-size:10px;color:var(--ink-light);transition:color .2s;padding:6px 2px;border-top:2.5px solid transparent}
+.tab-btn .tab-icon{font-size:18px;line-height:1}
+.tab-btn.active{color:var(--accent);border-top-color:var(--accent)}
+
+/* PAGES */
+.page{display:none;flex:1;overflow-y:auto;padding:16px 16px calc(var(--tab-h) + 16px)}
+.page.active{display:block}
+
+/* DASHBOARD STRIP */
+.dash-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:16px}
+.dash-cell{background:#fff;padding:14px 12px;text-align:center}
+.dash-cell.highlight{background:var(--paper-warm)}
+.dash-lbl{font-size:11px;color:var(--ink-light);margin-bottom:4px}
+.dash-val{font-family:var(--mono);font-size:18px;font-weight:500}
+.positive{color:#2e7d32}.negative{color:var(--red-txt)}
+
+/* CARD */
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-weight:600;font-size:14px}
+.card-body{padding:16px}
+
+/* TABLE */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px}
+thead{background:var(--paper-warm)}
+th{padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:var(--ink-light);letter-spacing:.5px;text-transform:uppercase;border-bottom:1.5px solid var(--border);white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #f0ece5;font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#faf8f4}
+.mono{font-family:var(--mono);font-size:12px}
+.expense{color:var(--red-txt)}.income{color:var(--green-txt)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-expense{background:var(--red-bg);color:var(--red-txt)}
+.badge-income{background:var(--green-bg);color:var(--green-txt)}
+
+/* STATUS DOT */
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:5px}
+.dot-g{background:#4caf50}.dot-r{background:#ef5350}.dot-y{background:#ff9800}.dot-grey{background:#aaa}
+
+/* BUTTONS */
+.btn{padding:8px 18px;border:none;border-radius:8px;font-family:var(--sans);font-size:13px;cursor:pointer;transition:opacity .2s;font-weight:500}
+.btn:hover{opacity:.85}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-secondary{background:var(--paper-warm);color:var(--ink);border:1px solid var(--border)}
+.btn-danger{background:var(--red-bg);color:var(--red-txt)}
+.btn-green{background:var(--green-bg);color:var(--green-txt)}
+.btn-blue{background:var(--blue-bg);color:var(--blue-txt)}
+.btn-sm{padding:4px 10px;font-size:11px;border-radius:5px}
+.btn-readonly{padding:4px 10px;font-size:11px;border-radius:5px;background:#f0f0f0;color:#bbb;border:1px solid #e0e0e0;cursor:not-allowed;font-family:var(--sans)}
+
+/* TOOLBAR */
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.search-box{flex:1;min-width:140px;padding:8px 13px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:13px;outline:none;background:var(--paper-warm)}
+.search-box:focus{border-color:var(--accent)}
+select.filter{padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:var(--sans);font-size:12px;background:var(--paper-warm);outline:none;cursor:pointer}
+
+/* EMPTY / LOADING */
+.empty{padding:56px 20px;text-align:center;color:var(--ink-light)}
+.empty .icon{font-size:36px;margin-bottom:10px}
+.loading-row{padding:40px;text-align:center;color:var(--ink-light);font-size:13px}
+.loading-row::before{content:'';display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin-right:10px;vertical-align:middle}
+
+/* VOUCHER BUBBLE */
+#voucher-bubble{
+  display:none;
+  position:fixed;z-index:600;
+  background:#fff;border-radius:10px;
+  box-shadow:0 6px 30px rgba(26,26,46,.22);
+  padding:8px;
+  pointer-events:none;
+  transition:opacity .15s;
+}
+#voucher-bubble img{
+  width:180px;height:180px;object-fit:contain;
+  border-radius:7px;display:block;
+  background:#f5f5f5;
+}
+#voucher-bubble .bub-caption{
+  font-size:11px;color:var(--ink-light);
+  text-align:center;margin-top:5px;
+  font-family:var(--mono);
+}
+#voucher-bubble .bub-loading{
+  width:180px;height:180px;border-radius:7px;
+  background:#f5f5f5;display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--ink-light);flex-direction:column;gap:8px;
+  overflow:hidden;
+}
+#voucher-bubble .bub-spinner{
+  width:24px;height:24px;
+  border:2px solid var(--border);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;
+}
+
+/* PRO SCREEN */
+#screen-pro{background:var(--paper);align-items:center;justify-content:flex-start;padding-top:0}
+.pro-header{width:100%;background:linear-gradient(135deg,#1a1a2e,#2d2d50);color:#fff;padding:20px 20px 16px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:100}
+.pro-back{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:6px 14px;color:rgba(255,255,255,.8);font-size:12px;cursor:pointer;font-family:var(--sans)}
+.pro-back:hover{background:rgba(255,255,255,.2);color:#fff}
+.pro-title{font-family:var(--serif);font-size:20px;color:var(--gold)}
+.pro-subtitle{font-size:12px;color:rgba(255,255,255,.5);margin-top:2px}
+
+/* PIN LOCK */
+#pro-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px 20px;min-height:calc(100vh - 80px)}
+.lock-icon{font-size:48px;margin-bottom:16px}
+.lock-title{font-family:var(--serif);font-size:22px;margin-bottom:8px;color:var(--ink)}
+.lock-subtitle{font-size:13px;color:var(--ink-light);margin-bottom:32px;text-align:center;max-width:280px}
+.pin-dots{display:flex;gap:14px;justify-content:center;margin-bottom:24px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid var(--border);background:transparent;transition:all .15s}
+.pin-dot.filled{background:var(--accent);border-color:var(--accent)}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:280px;width:100%}
+.key{aspect-ratio:1;display:flex;align-items:center;justify-content:center;background:#fff;border:1.5px solid var(--border);border-radius:12px;font-size:22px;font-family:var(--mono);font-weight:500;cursor:pointer;transition:all .12s;box-shadow:var(--shadow);user-select:none}
+.key:hover{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.04)}
+.key:active{transform:scale(.96)}
+.key.del{font-size:18px;color:var(--ink-light)}
+.key.del:hover{background:var(--red-bg);color:var(--red-txt);border-color:var(--red-txt)}
+.key.empty{background:transparent;border:none;box-shadow:none;cursor:default}
+.key.empty:hover{background:transparent;transform:none}
+.pin-error{color:var(--red-txt);font-size:13px;margin-top:14px;min-height:20px;text-align:center}
+.pin-shake{animation:shake .4s ease}
+
+/* PRO DASHBOARD */
+#pro-dashboard{display:none;width:100%;flex:1;overflow-y:auto;padding:16px}
+.pro-menu-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;max-width:600px;margin:0 auto}
+.pro-menu-card{background:#fff;border-radius:14px;box-shadow:var(--shadow);padding:20px 16px;cursor:pointer;transition:transform .15s,box-shadow .15s;border:1.5px solid transparent;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.pro-menu-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lg);border-color:var(--accent)}
+.pro-card-icon{font-size:32px}
+.pro-card-title{font-weight:600;font-size:14px;color:var(--ink)}
+.pro-card-desc{font-size:12px;color:var(--ink-light);line-height:1.5}
+.pro-card-badge{display:inline-block;padding:2px 8px;background:var(--gold);color:#fff;border-radius:10px;font-size:10px;font-weight:600;margin-top:2px}
+.pro-section-title{font-family:var(--serif);font-size:15px;color:var(--ink-light);margin:16px 0 10px;max-width:600px;width:100%}
+
+/* PRO PANELS */
+.pro-panel{display:none;max-width:600px;width:100%;padding:0 0 80px}
+.pro-panel.active{display:block}
+.pro-panel-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.btn-back-sm{background:var(--paper-warm);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:var(--sans)}
+
+/* NLP BOX */
+.nlp-box{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.nlp-top{background:linear-gradient(135deg,var(--ink),#2d2d50);padding:18px 20px 14px;color:#fff}
+.nlp-top h3{font-family:var(--serif);font-size:16px;margin-bottom:3px}
+.nlp-top p{font-size:12px;color:rgba(255,255,255,.5)}
+.nlp-body{padding:16px 20px}
+textarea.nlp-input{width:100%;min-height:90px;padding:12px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:14px;resize:vertical;outline:none;background:var(--paper-warm);line-height:1.7;transition:border-color .2s}
+textarea.nlp-input:focus{border-color:var(--accent)}
+.chips{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+.chip{padding:4px 11px;background:var(--paper-warm);border:1px solid var(--border);border-radius:16px;font-size:12px;color:var(--ink-light);cursor:pointer;transition:all .15s}
+.chip:hover{background:var(--ink);color:#fff;border-color:var(--ink)}
+
+/* PREVIEW TABLE */
+.preview-wrap{margin-top:14px;border:1.5px solid var(--gold);border-radius:var(--radius);overflow:hidden;display:none}
+.preview-wrap.show{display:block}
+.preview-bar{background:#fffbf0;padding:10px 14px;font-size:12px;color:var(--gold);font-weight:500;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #f0e8c8}
+.preview-actions{display:flex;gap:8px}
+
+/* OCR UPLOAD */
+.ocr-zone{border:2.5px dashed var(--border);border-radius:var(--radius);padding:36px;text-align:center;cursor:pointer;transition:all .2s}
+.ocr-zone:hover,.ocr-zone.over{border-color:var(--accent);background:#fff5f4}
+.ocr-zone .icon{font-size:32px;margin-bottom:8px}
+
+/* MODALS */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,26,46,.65);z-index:500;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(4px)}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;max-width:500px;width:100%;box-shadow:var(--shadow-lg);animation:modalIn .2s ease}
+.modal h3{font-family:var(--serif);font-size:17px;margin-bottom:14px}
+.modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:500;color:var(--ink-light);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--sans);font-size:13px;outline:none;background:var(--paper-warm)}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* TOAST */
+#toast-wrap{position:fixed;bottom:calc(var(--tab-h) + 12px);right:16px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:11px 18px;border-radius:10px;font-size:13px;font-weight:500;color:#fff;box-shadow:0 4px 20px rgba(0,0,0,.2);animation:toastIn .3s ease;max-width:300px}
+.toast.success{background:#2e7d32}.toast.error{background:var(--red-txt)}.toast.info{background:var(--ink)}
+
+/* KEYFRAMES */
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes modalIn{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes toastIn{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+
+@media(max-width:480px){
+  .login-card{padding:32px 20px}
+  .pro-menu-grid{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="screen-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">对账管理<span>财务凭证智能系统</span></div>
+    <p class="login-subtitle">请登录以继续</p>
+    <div class="field">
+      <label>用户名</label>
+      <input type="text" id="inp-user" placeholder="请输入用户名" autocomplete="username" autocapitalize="none">
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input type="password" id="inp-pass" placeholder="请输入密码" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">
+      <div class="spinner-sm" id="login-spinner"></div>
+      <span id="login-btn-text">登 录</span>
+    </button>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<div id="screen-app" class="screen">
+  <header class="app-header">
+    <div class="app-logo"><em>对账</em>管理</div>
+    <div class="header-right">
+      <button class="btn-hdr btn-pro" id="btn-pro-entry" onclick="openPro()">🤖 AI Pro</button>
+      <div class="user-badge">
+        <div class="avatar" id="user-avatar">U</div>
+        <span id="user-display">用户</span>
+      </div>
+      <button class="btn-hdr" onclick="logout()">退出</button>
+    </div>
+  </header>
+
+  <div id="page-ledger" class="page active">
+    <div class="dash-strip">
+      <div class="dash-cell"><div class="dash-lbl">可见收入</div><div class="dash-val positive" id="d-income">¥—</div></div>
+      <div class="dash-cell"><div class="dash-lbl">可见支出</div><div class="dash-val negative" id="d-expense">¥—</div></div>
+      <div class="dash-cell highlight"><div class="dash-lbl">💰 净结余</div><div class="dash-val" id="d-balance">¥—</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">流水明细</span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-secondary btn-sm" onclick="loadPage('ledger')">🔄</button>
+          <button class="btn btn-secondary btn-sm" onclick="exportCSV()">⬇ CSV</button>
+        </div>
+      </div>
+      <div class="card-body" style="padding-bottom:8px">
+        <div class="toolbar">
+          <input class="search-box" type="text" placeholder="搜索摘要、分类…" id="ledger-search" oninput="filterLedger()">
+          <select class="filter" id="f-month" onchange="filterLedger()"><option value="">全部月份</option></select>
+          <select class="filter" id="f-type"  onchange="filterLedger()"><option value="">收/支</option><option>支出</option><option>收入</option></select>
+          <select class="filter" id="f-status" onchange="filterLedger()"><option value="">状态</option><option>未关联</option><option>已关联</option><option>待续</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>日期</th><th>类型</th><th>分类</th><th>金额</th><th>摘要</th><th>状态</th><th>凭证</th><th>操作</th>
+            </tr></thead>
+            <tbody id="ledger-tbody"></tbody>
+          </table>
+        </div>
+        <div id="ledger-empty" class="empty" style="display:none"><div class="icon">📭</div><p>暂无记录</p></div>
+        <div id="ledger-loading" class="loading-row" style="display:none">加载中…</div>
+        <div id="ledger-count" style="padding:8px 4px;font-size:12px;color:var(--ink-light)"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-monthly" class="page">
+    <div class="card">
+      <div class="card-header"><span class="card-title">② 月度看板</span><button class="btn btn-secondary btn-sm" onclick="loadPage('monthly')">🔄</button></div>
+      <div class="card-body">
+        <div id="monthly-loading" class="loading-row" style="display:none">加载中…</div>
+        <div class="table-wrap"><table><thead id="monthly-thead"></thead><tbody id="monthly-tbody"></tbody></table></div>
+        <div id="monthly-empty" class="empty" style="display:none"><div class="icon">📊</div><p>暂无数据</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-annual" class="page">
+    <div class="card">
+      <div class="card-header"><span class="card-title">③ 年度汇总</span><button class="btn btn-secondary btn-sm" onclick="loadPage('annual')">🔄</button></div>
+      <div class="card-body">
+        <div id="annual-loading" class="loading-row" style="display:none">加载中…</div>
+        <div class="table-wrap"><table><thead id="annual-thead"></thead><tbody id="annual-tbody"></tbody></table></div>
+        <div id="annual-empty" class="empty" style="display:none"><div class="icon">📈</div><p>暂无数据</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-time" class="page">
+    <div class="card">
+      <div class="card-header"><span class="card-title">④ 时间看板</span><button class="btn btn-secondary btn-sm" onclick="loadPage('time')">🔄</button></div>
+      <div class="card-body">
+        <div id="time-loading" class="loading-row" style="display:none">加载中…</div>
+        <div class="table-wrap"><table><thead id="time-thead"></thead><tbody id="time-tbody"></tbody></table></div>
+        <div id="time-empty" class="empty" style="display:none"><div class="icon">🕐</div><p>暂无数据</p></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="page-category" class="page">
+    <div class="card">
+      <div class="card-header"><span class="card-title">⑤ 分类设置</span><button class="btn btn-secondary btn-sm" onclick="loadPage('category')">🔄</button></div>
+      <div class="card-body">
+        <div id="category-loading" class="loading-row" style="display:none">加载中…</div>
+        <div class="table-wrap"><table><thead id="category-thead"></thead><tbody id="category-tbody"></tbody></table></div>
+        <div id="category-empty" class="empty" style="display:none"><div class="icon">🏷</div><p>暂无分类</p></div>
+        <p style="margin-top:14px;font-size:12px;color:var(--ink-light)">分类数据直接在 Google Sheet 里编辑，刷新后生效。</p>
+      </div>
+    </div>
+  </div>
+
+  <nav class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('ledger',this)"><span class="tab-icon">📋</span>流水明细</button>
+    <button class="tab-btn" onclick="switchTab('monthly',this)"><span class="tab-icon">📊</span>月度看板</button>
+    <button class="tab-btn" onclick="switchTab('annual',this)"><span class="tab-icon">📈</span>年度汇总</button>
+    <button class="tab-btn" onclick="switchTab('time',this)"><span class="tab-icon">🕐</span>时间看板</button>
+    <button class="tab-btn" onclick="switchTab('category',this)"><span class="tab-icon">🏷</span>分类设置</button>
+  </nav>
+</div>
+
+<div id="screen-pro" class="screen">
+  <div class="pro-header">
+    <button class="pro-back" onclick="closePro()">← 返回</button>
+    <div>
+      <div class="pro-title">🤖 AI 记账助手 Pro</div>
+      <div class="pro-subtitle">高级功能区 · 仅授权用户可用</div>
+    </div>
+  </div>
+
+  <div id="pro-lock">
+    <div class="lock-icon">🔐</div>
+    <div class="lock-title">高级功能区</div>
+    <div class="lock-subtitle">请输入您的 8 位专属密码解锁</div>
+    <div class="pin-dots" id="pin-dots">
+      <div class="pin-dot" id="pd-0"></div><div class="pin-dot" id="pd-1"></div>
+      <div class="pin-dot" id="pd-2"></div><div class="pin-dot" id="pd-3"></div>
+      <div class="pin-dot" id="pd-4"></div><div class="pin-dot" id="pd-5"></div>
+      <div class="pin-dot" id="pd-6"></div><div class="pin-dot" id="pd-7"></div>
+    </div>
+    <div class="pin-keypad">
+      <div class="key" onclick="pinInput('1')">1</div><div class="key" onclick="pinInput('2')">2</div><div class="key" onclick="pinInput('3')">3</div>
+      <div class="key" onclick="pinInput('4')">4</div><div class="key" onclick="pinInput('5')">5</div><div class="key" onclick="pinInput('6')">6</div>
+      <div class="key" onclick="pinInput('7')">7</div><div class="key" onclick="pinInput('8')">8</div><div class="key" onclick="pinInput('9')">9</div>
+      <div class="key empty"></div><div class="key" onclick="pinInput('0')">0</div><div class="key del" onclick="pinDelete()">⌫</div>
+    </div>
+    <div class="pin-error" id="pin-error"></div>
+  </div>
+
+  <div id="pro-dashboard">
+    <div id="pro-main" style="max-width:600px;margin:0 auto">
+      <div class="pro-section-title">📝 记账工具</div>
+      <div class="pro-menu-grid">
+        <div class="pro-menu-card" onclick="openProPanel('nlp')">
+          <div class="pro-card-icon">✏️</div>
+          <div class="pro-card-title">一句话记账</div>
+          <div class="pro-card-desc">输入自然语言，AI 自动拆解成多笔账目</div>
+          <div class="pro-card-badge">AI 驱动</div>
+        </div>
+        <div class="pro-menu-card" onclick="openProPanel('ocr')">
+          <div class="pro-card-icon">📷</div>
+          <div class="pro-card-title">扫描上传凭证</div>
+          <div class="pro-card-desc">拍照或上传发票，真实保存到 Drive</div>
+          <div class="pro-card-badge">AI 驱动</div>
+        </div>
+      </div>
+      <div class="pro-section-title">🔍 对账工具</div>
+      <div class="pro-menu-grid">
+        <div class="pro-menu-card" onclick="openProPanel('batch')">
+          <div class="pro-card-icon">🔗</div>
+          <div class="pro-card-title">批量对账</div>
+          <div class="pro-card-desc">批量处理未关联的凭证</div>
+          <div class="pro-card-badge">即将上线</div>
+        </div>
+        <div class="pro-menu-card" onclick="openProPanel('integrity')">
+          <div class="pro-card-icon">🩺</div>
+          <div class="pro-card-title">关联性检查</div>
+          <div class="pro-card-desc">检测异常关联和重复凭证</div>
+          <div class="pro-card-badge">即将上线</div>
+        </div>
+      </div>
+      <div class="pro-section-title">🛠 系统工具</div>
+      <div class="pro-menu-grid">
+        <div class="pro-menu-card" onclick="openProPanel('migrate')">
+          <div class="pro-card-icon">📦</div>
+          <div class="pro-card-title">历史数据迁移</div>
+          <div class="pro-card-desc">H 列富文本凭证链接 → K 列</div>
+        </div>
+        <div class="pro-menu-card" onclick="openProPanel('dedup')">
+          <div class="pro-card-icon">🔍</div>
+          <div class="pro-card-title">MD5 查重</div>
+          <div class="pro-card-desc">扫描上传队列中的重复图片</div>
+        </div>
+      </div>
+      <div style="height:80px"></div>
+    </div>
+
+    <div id="pro-panel-nlp" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header">
+        <button class="btn-back-sm" onclick="closeProPanel()">← 返回</button>
+        <span style="font-weight:600;font-size:15px">✏️ 一句话记账</span>
+      </div>
+      <div class="nlp-box">
+        <div class="nlp-top"><h3>AI 自然语言解析</h3><p>输入一段话，AI 自动拆解成多笔独立账目</p></div>
+        <div class="nlp-body">
+          <textarea class="nlp-input" id="nlp-text" placeholder="例：今天早上打车去公司花了30，中午和客户吃饭垫付了255，昨天咸鱼卖二手书赚了50块钱"></textarea>
+          <div class="chips">
+            <span class="chip" onclick="fillChip(this)">早上打车30，午饭外卖45</span>
+            <span class="chip" onclick="fillChip(this)">超市买菜128.5，加油300</span>
+            <span class="chip" onclick="fillChip(this)">收到工资15000，缴社保650</span>
+            <span class="chip" onclick="fillChip(this)">退款-10元，买书花了89</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;margin-top:12px">
+            <button class="btn btn-primary" id="nlp-btn" onclick="runNLP()"><span id="nlp-btn-text">🚀 AI 解析</span></button>
+            <span style="font-size:12px;color:var(--ink-light)">支持多笔混合输入</span>
+          </div>
+          <div class="preview-wrap" id="nlp-preview">
+            <div class="preview-bar">
+              <span>📝 解析结果（请核查）</span>
+              <div class="preview-actions">
+                <button class="btn btn-danger btn-sm" onclick="cancelNLP()">取消</button>
+                <button class="btn btn-green btn-sm" onclick="confirmNLP()">✅ 全部入账</button>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table><thead><tr><th>日期</th><th>类型</th><th>分类</th><th>金额</th><th>摘要</th></tr></thead>
+              <tbody id="nlp-tbody"></tbody></table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pro-panel-ocr" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header">
+        <button class="btn-back-sm" onclick="closeProPanel()">← 返回</button>
+        <span style="font-weight:600;font-size:15px">📷 扫描上传凭证</span>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="ocr-zone" id="ocr-zone"
+               onclick="document.getElementById('ocr-file').click()"
+               ondragover="event.preventDefault();this.classList.add('over')"
+               ondrop="handleOCRDrop(event)"
+               ondragleave="this.classList.remove('over')">
+            <div class="icon">📤</div>
+            <p style="color:var(--ink-light)">点击选文件 / 拖拽上传</p>
+            <p style="font-size:12px;color:var(--ink-light);margin-top:4px">手机端点击后可直接拍照或从相册选取</p>
+          </div>
+          <input type="file" id="ocr-file" accept="image/*" multiple style="display:none" onchange="handleOCRFiles(event)">
+          <div id="ocr-queue" style="margin-top:16px"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="pro-panel-batch" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header"><button class="btn-back-sm" onclick="closeProPanel()">← 返回</button><span style="font-weight:600;font-size:15px">🔗 批量对账</span></div>
+      <div class="card"><div class="card-body"><div class="empty"><div class="icon">🚧</div><p>功能开发中，敬请期待</p></div></div></div>
+    </div>
+
+    <div id="pro-panel-integrity" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header"><button class="btn-back-sm" onclick="closeProPanel()">← 返回</button><span style="font-weight:600;font-size:15px">🩺 关联性检查</span></div>
+      <div class="card"><div class="card-body"><div class="empty"><div class="icon">🚧</div><p>功能开发中，敬请期待</p></div></div></div>
+    </div>
+
+    <div id="pro-panel-migrate" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header"><button class="btn-back-sm" onclick="closeProPanel()">← 返回</button><span style="font-weight:600;font-size:15px">📦 历史数据迁移</span></div>
+      <div class="card"><div class="card-body">
+        <p style="font-size:13px;color:var(--ink-light);line-height:1.8;margin-bottom:16px">将原 H 列富文本超链接凭证数据提取 Drive 文件 ID，写入 K 列。</p>
+        <button class="btn btn-primary" onclick="runMigrate()">🚀 开始迁移</button>
+        <div id="migrate-status" style="margin-top:14px;font-size:13px;color:var(--ink-light)"></div>
+      </div></div>
+    </div>
+
+    <div id="pro-panel-dedup" class="pro-panel" style="max-width:600px;margin:0 auto">
+      <div class="pro-panel-header"><button class="btn-back-sm" onclick="closeProPanel()">← 返回</button><span style="font-weight:600;font-size:15px">🔍 MD5 查重</span></div>
+      <div class="card"><div class="card-body">
+        <p style="font-size:13px;color:var(--ink-light);margin-bottom:16px">扫描当前上传队列中的图片，找出重复文件。</p>
+        <div class="empty"><div class="icon">🔍</div><p>请先上传凭证再扫描</p></div>
+      </div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3>✏️ 编辑账目</h3>
+    <input type="hidden" id="edit-rownum">
+    <div class="form-row">
+      <div class="form-group"><label>日期</label><input type="date" id="edit-date"></div>
+      <div class="form-group"><label>类型</label><select id="edit-type"><option>支出</option><option>收入</option></select></div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>分类</label><select id="edit-cat"></select></div>
+      <div class="form-group"><label>金额（元）</label><input type="number" id="edit-amount" step="0.01" min="0"></div>
+    </div>
+    <div class="form-group"><label>摘要</label><textarea id="edit-summary" rows="2" style="resize:vertical"></textarea></div>
+    <div class="form-group"><label>核对状态</label><select id="edit-status"><option>未关联</option><option>已关联</option><option>待续</option></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('edit-modal')">取消</button>
+      <button class="btn btn-primary" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="del-modal">
+  <div class="modal">
+    <h3>⚠️ 确认删除</h3>
+    <p style="color:var(--ink-light);font-size:13px">确定删除这条账目？操作不可撤销。</p>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('del-modal')">取消</button>
+      <button class="btn btn-danger" onclick="confirmDel()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="voucher-modal">
+  <div class="modal" style="max-width:680px">
+    <h3 id="voucher-modal-title">🖼 凭证图片</h3>
+    <div id="voucher-modal-body" style="display:flex;flex-wrap:wrap;gap:10px;max-height:60vh;overflow-y:auto"></div>
+    <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal('voucher-modal')">关闭</button></div>
+  </div>
+</div>
+
+<div id="voucher-bubble">
+  <img id="bubble-img" src="" alt="" referrerpolicy="no-referrer">
+  <div class="bub-caption" id="bubble-cap"></div>
+</div>
+
+<div id="toast-wrap"></div>
+
+<script>
+let SESSION = { token:null, username:null, displayName:null, proPasswordHash:null, canEdit:true };
+let allTransactions = [], filteredTransactions = [];
+let pendingNLPItems = [];
+let currentEditRow = null, currentDelRow = null;
+let ocrQueue = [];
+let categories = ['餐饮','交通','购物','娱乐','医疗','教育','住房','水电气','办公','工资','投资','奖金','其他支出','其他收入'];
+let pageLoaded = {};
+
+const IMG_CACHE = new Map();
+const IS_TOUCH = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('dz_session');
+  if (saved) {
+    try {
+      SESSION = JSON.parse(saved);
+      if (SESSION.token) { enterApp(); return; }
+    } catch(e) {}
+  }
+  showScreen('login');
+});
+
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+}
+
+// 核心修改2：完美对接二代架构的 action 代理机制
+async function api(method, params) {
+  const token = SESSION.token || '';
+  let url = SCRIPT_URL;
+  let opts = {};
+  
+  // 核心：强制所有请求通过 URL 参数传递 action
+  const queryParams = new URLSearchParams({ action: params.action || '', token: token });
+
+  if (method === 'GET') {
+    for (let key in params) { if (key !== 'action') queryParams.append(key, params[key]); }
+    url = SCRIPT_URL + '/?' + queryParams.toString();
+    opts = { method: 'GET' };
+  } else {
+    url = SCRIPT_URL + '/?' + queryParams.toString();
+    opts = { method:'POST', headers:{'Content-Type':'text/plain'}, body: JSON.stringify(params) };
+  }
+
+  const res  = await fetch(url, opts);
+  const data = await res.json();
+  if (data.code === 401) {
+    localStorage.removeItem('dz_session'); SESSION = {};
+    showScreen('login');
+    throw new Error('登录已过期，请重新登录');
+  }
+  return data;
+}
+
+document.getElementById('inp-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('inp-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('inp-pass').focus(); });
+
+// 核心修改3：登录接口也必须挂载 action 参数
+async function doLogin() {
+  const u = document.getElementById('inp-user').value.trim();
+  const p = document.getElementById('inp-pass').value.trim();
+  if (!u || !p) { showLoginError('请填写用户名和密码'); return; }
+  setLoginLoading(true);
+  try {
+    const data = await fetch(SCRIPT_URL + "/?action=login", {
+      method:'POST', headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify({ action:'login', username:u, password:p })
+    }).then(r => r.json());
+    if (!data.ok) { showLoginError(data.error || '登录失败'); return; }
+    SESSION = {
+      token:           data.token,
+      username:        data.username,
+      displayName:     data.displayName,
+      proPasswordHash: data.proPasswordHash,
+      canEdit:         data.canEdit !== false,
+    };
+    localStorage.setItem('dz_session', JSON.stringify(SESSION));
+    enterApp();
+  } catch(e) {
+    showLoginError('网络错误：' + e.message);
+  } finally {
+    setLoginLoading(false);
+  }
+}
+
+function showLoginError(msg){ const el=document.getElementById('login-error'); el.textContent=msg; el.classList.add('show'); }
+function setLoginLoading(on){ document.getElementById('login-spinner').style.display=on?'block':'none'; document.getElementById('login-btn-text').textContent=on?'验证中…':'登 录'; document.getElementById('btn-login').disabled=on; }
+
+function enterApp() {
+  document.getElementById('user-avatar').textContent  = (SESSION.displayName||SESSION.username||'U').slice(0,1).toUpperCase();
+  document.getElementById('user-display').textContent = SESSION.displayName || SESSION.username;
+  const proBtn = document.getElementById('btn-pro-entry');
+  if (!SESSION.proPasswordHash) {
+    if (proBtn) proBtn.style.display = 'none';
+    window._verifyPin = function() { pinFail(); };
+  } else {
+    if (proBtn) proBtn.style.display = 'flex';
+    window._verifyPin = function() { verifyPinWithBackend(pinBuffer); };
+  }
+  showScreen('app');
+  loadPage('ledger');
+}
+
+function logout() {
+  localStorage.removeItem('dz_session');
+  SESSION = { token:null, username:null, displayName:null, proPasswordHash:null, canEdit:true };
+  allTransactions = []; filteredTransactions = []; pageLoaded = {};
+  proUnlocked = false;
+  showScreen('login');
+  document.getElementById('inp-user').value = '';
+  document.getElementById('inp-pass').value = '';
+  document.getElementById('login-error').classList.remove('show');
+}
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  document.getElementById('page-' + name).classList.add('active');
+  if (!pageLoaded[name]) loadPage(name);
+}
+
+async function loadPage(name) {
+  if (name === 'ledger') { await loadLedger(); return; }
+  showEl(name+'-loading'); hideEl(name+'-empty');
+  try {
+    const data = await api('GET', { action:'read_sheet', sheet:name });
+    if (!data.ok) throw new Error(data.error);
+    renderGenericSheet(name, data.values);
+    pageLoaded[name] = true;
+  } catch(e) {
+    showToast('加载失败：'+e.message,'error');
+  } finally {
+    hideEl(name+'-loading');
+  }
+}
+
+function renderGenericSheet(name, values) {
+  if (!values || values.length < 2) { showEl(name+'-empty'); return; }
+  const headers = values[0];
+  const dataRows = values.slice(1);
+  const colTypes = headers.map((_, ci) => {
+    const samples = dataRows.map(r => r[ci]).filter(v => v !== '' && v != null).slice(0, 20);
+    if (!samples.length) return 'text';
+    const numCount  = samples.filter(v => !isNaN(parseFloat(v)) && isFinite(v)).length;
+    const dateCount = samples.filter(v => {
+      const s = String(v);
+      return /^\d{4}[-\/]\d{1,2}([-\/]\d{1,2})?/.test(s) || /T\d{2}:\d{2}/.test(s);
+    }).length;
+    if (numCount  / samples.length >= 0.6) return 'numeric';
+    if (dateCount / samples.length >= 0.6) return 'date';
+    return 'text';
+  });
+  function cleanCell(val, type) {
+    if (val === null || val === undefined || val === '') return '—';
+    const s = String(val);
+    if (type === 'date') {
+      const isoMatch = s.match(/^(\d{4}-\d{2}-\d{2})/);
+      if (isoMatch) return isoMatch[1];
+      if (!isNaN(Date.parse(s)) && s.length > 10) return new Date(s).toISOString().slice(0, 10);
+      return s;
+    }
+    if (type === 'numeric') {
+      const n = parseFloat(val);
+      if (!isNaN(n) && isFinite(n)) return Number.isInteger(n) ? String(n) : n.toFixed(2);
+      return s;
+    }
+    return s;
+  }
+  document.getElementById(name+'-thead').innerHTML = '<tr>' +
+    headers.map((h, ci) => {
+      const align = (colTypes[ci] === 'numeric' || colTypes[ci] === 'date') ? 'text-align:right' : '';
+      return `<th style="${align}">${h}</th>`;
+    }).join('') + '</tr>';
+  document.getElementById(name+'-tbody').innerHTML = dataRows.map(row =>
+    '<tr>' + headers.map((_, ci) => {
+      const type  = colTypes[ci];
+      const val   = row[ci];
+      const clean = cleanCell(val, type);
+      const align = (type === 'numeric' || type === 'date') ? 'text-align:right' : '';
+      const cls   = type === 'numeric' ? 'mono' : '';
+      return `<td class="${cls}" style="${align}">${clean}</td>`;
+    }).join('') + '</tr>'
+  ).join('');
+}
+
+async function loadLedger() {
+  showEl('ledger-loading'); hideEl('ledger-empty');
+  document.getElementById('ledger-tbody').innerHTML = '';
+  try {
+    const data = await api('GET', { action:'read_sheet', sheet:'ledger' });
+    if (!data.ok) throw new Error(data.error);
+    const rows = data.values || [];
+    allTransactions = rows.slice(2).map((r, i) => ({
+      rowNum:     i + 3,
+      date:       String(r[0]  || ''),
+      month:      String(r[1]  || ''),
+      type:       String(r[2]  || ''),
+      category:   String(r[3]  || ''),
+      amount:     parseFloat(r[4]) || 0,
+      summary:    String(r[5]  || ''),
+      source:     String(r[6]  || ''),
+      status:     String(r[8]  || ''),
+      voucherIds: String(r[10] || ''),
+    }));
+    filteredTransactions = [...allTransactions];
+    populateMonthFilter();
+    filterLedger();
+    pageLoaded.ledger = true;
+  } catch(e) {
+    showToast('加载流水失败：'+e.message,'error');
+  } finally {
+    hideEl('ledger-loading');
+  }
+}
+
+function filterLedger() {
+  const search = (document.getElementById('ledger-search')?.value||'').toLowerCase();
+  const month  = document.getElementById('f-month')?.value  || '';
+  const type   = document.getElementById('f-type')?.value   || '';
+  const status = document.getElementById('f-status')?.value || '';
+  filteredTransactions = allTransactions.filter(t => {
+    if (month  && t.month   !== month)  return false;
+    if (type   && t.type    !== type)   return false;
+    if (status && t.status  !== status) return false;
+    if (search && !t.summary.toLowerCase().includes(search) && !t.category.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  renderLedger();
+  updateDash();
+}
+
+function renderLedger() {
+  const tbody = document.getElementById('ledger-tbody');
+  const empty = document.getElementById('ledger-empty');
+  const count = document.getElementById('ledger-count');
+  if (!filteredTransactions.length) {
+    tbody.innerHTML = ''; empty.style.display='block'; count.textContent=''; return;
+  }
+  empty.style.display = 'none';
+  count.textContent = `显示 ${filteredTransactions.length} / ${allTransactions.length} 条`;
+  tbody.innerHTML = filteredTransactions.map(t => {
+    const ids = t.voucherIds.startsWith('v:') ? t.voucherIds.slice(2).split('|').filter(Boolean) : t.voucherIds.split('|').filter(Boolean);
+    let voucherCell;
+    if (ids.length) {
+      const idsJson = JSON.stringify(ids);
+      if (IS_TOUCH) {
+        voucherCell = `<span class="vcell" data-ids='${idsJson}' data-rn="${t.rowNum}" style="cursor:pointer;color:var(--blue-txt);font-size:12px;user-select:none">🖼 ${ids.length}张</span>`;
+      } else {
+        voucherCell = `<span class="vcell" data-ids='${idsJson}' data-rn="${t.rowNum}" style="cursor:pointer;color:var(--blue-txt);font-size:12px">🖼 ${ids.length}张</span>`;
+      }
+    } else {
+      voucherCell = `<span style="color:var(--border);font-size:11px">—</span>`;
+    }
+    const statusDot = { '未关联':'dot-grey','已关联':'dot-g','待续':'dot-y' }[t.status] || 'dot-grey';
+    let actionCell;
+    if (SESSION.canEdit) {
+      actionCell = `<div style="display:flex;gap:5px"><button class="btn btn-secondary btn-sm" onclick="openEdit(${t.rowNum})">编辑</button><button class="btn btn-danger btn-sm" onclick="openDel(${t.rowNum})">删除</button></div>`;
+    } else {
+      actionCell = `<div style="display:flex;gap:5px"><button class="btn-readonly" disabled title="您的账号为只读权限">编辑</button><button class="btn-readonly" disabled title="您的账号为只读权限">删除</button></div>`;
+    }
+    return `<tr><td class="mono">${t.date}</td><td><span class="badge badge-${t.type==='支出'?'expense':'income'}">${t.type}</span></td><td>${t.category}</td><td class="mono ${t.type==='支出'?'expense':'income'}">¥${t.amount.toFixed(2)}</td><td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t.summary}">${t.summary||'—'}</td><td><span class="dot ${statusDot}"></span>${t.status||'—'}</td><td>${voucherCell}</td><td>${actionCell}</td></tr>`;
+  }).join('');
+  bindVoucherEvents();
+}
+
+function updateDash() {
+  const income  = filteredTransactions.filter(t=>t.type==='收入').reduce((s,t)=>s+t.amount,0);
+  const expense = filteredTransactions.filter(t=>t.type==='支出').reduce((s,t)=>s+t.amount,0);
+  const bal = income - expense;
+  document.getElementById('d-income').textContent  = '¥' + income.toFixed(2);
+  document.getElementById('d-expense').textContent = '¥' + expense.toFixed(2);
+  const bEl = document.getElementById('d-balance');
+  bEl.textContent = (bal>=0?'+':'') + '¥' + bal.toFixed(2);
+  bEl.className   = 'dash-val ' + (bal>=0?'positive':'negative');
+}
+
+function populateMonthFilter() {
+  const months = [...new Set(allTransactions.map(t=>t.month).filter(Boolean))].sort().reverse();
+  const sel = document.getElementById('f-month');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">全部月份</option>' + months.map(m=>`<option>${m}</option>`).join('');
+  sel.value = cur;
+}
+
+let bubbleTimer   = null;
+const bubble      = document.getElementById('voucher-bubble');
+const bubbleImg   = document.getElementById('bubble-img');
+const bubbleCap   = document.getElementById('bubble-cap');
+
+function bindVoucherEvents() {
+  document.querySelectorAll('.vcell').forEach(el => {
+    const ids = JSON.parse(el.dataset.ids);
+    const rn  = el.dataset.rn;
+    if (IS_TOUCH) {
+      let startX = 0, startY = 0, moved = false;
+      el.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; moved  = false; }, { passive: true });
+      el.addEventListener('touchmove', (e) => { const dx = Math.abs(e.touches[0].clientX - startX); const dy = Math.abs(e.touches[0].clientY - startY); if (dx > 8 || dy > 8) moved = true; }, { passive: true });
+      el.addEventListener('touchend', (e) => { if (moved) return; e.preventDefault(); showVouchers(rn, ids); }, { passive: false });
+    } else {
+      el.addEventListener('mouseenter', (e) => { bubbleTimer = setTimeout(() => { showBubbleAt(ids, e.clientX, e.clientY); }, 500); });
+      el.addEventListener('mousemove', (e) => { if (bubble.style.display === 'block') positionBubble(e.clientX, e.clientY); });
+      el.addEventListener('mouseleave', () => { clearTimeout(bubbleTimer); hideBubble(); });
+      el.addEventListener('dblclick', (e) => { e.preventDefault(); hideBubble(); showVouchers(rn, ids); });
+    }
+  });
+}
+
+async function showBubbleAt(ids, clientX, clientY) {
+  if (!ids.length) return;
+  const firstId = ids[0];
+  const capText = ids.length > 1 ? `共 ${ids.length} 张 · 长按预览，双击查看全部` : '长按预览，双击查看大图';
+  bubbleImg.style.display = 'none';
+  let loadingDiv = bubble.querySelector('.bub-loading');
+  if (!loadingDiv) { loadingDiv = document.createElement('div'); loadingDiv.className = 'bub-loading'; bubble.insertBefore(loadingDiv, bubbleImg); }
+  loadingDiv.innerHTML = '<div class="bub-spinner"></div><span>加载中…</span>';
+  loadingDiv.style.fontSize = '11px'; loadingDiv.style.color = 'var(--ink-light)'; loadingDiv.style.display = 'flex'; loadingDiv.style.flexDirection = 'column'; loadingDiv.style.gap = '8px'; loadingDiv.style.alignItems = 'center'; loadingDiv.style.justifyContent = 'center'; loadingDiv.style.padding = '0';
+  bubbleCap.textContent = capText; bubble.style.display = 'block'; positionBubble(clientX, clientY);
+  try {
+    const src = await getImgSrc(firstId);
+    if (bubble.style.display === 'none') return;
+    bubbleImg.src = src; bubbleImg.style.display = 'block'; loadingDiv.style.display = 'none'; positionBubble(clientX, clientY);
+  } catch(e) {
+    if (bubble.style.display === 'none') return;
+    loadingDiv.innerHTML = ''; loadingDiv.style.fontSize = '11px'; loadingDiv.style.color = 'var(--red-txt)'; loadingDiv.style.padding = '8px'; loadingDiv.style.textAlign = 'center'; loadingDiv.textContent = e.message || '加载失败';
+  }
+}
+
+async function getImgSrc(fileId) {
+  if (IMG_CACHE.has(fileId)) return IMG_CACHE.get(fileId);
+  const res = await api('GET', { action: 'image_proxy', fileId });
+  if (!res.ok) { if (res.code === 413) throw new Error('图片体积过大'); throw new Error(res.error || '图片加载失败'); }
+  const src = `data:${res.mime};base64,${res.base64}`;
+  IMG_CACHE.set(fileId, src);
+  return src;
+}
+
+function positionBubble(clientX, clientY) {
+  const vw = window.innerWidth, vh = window.innerHeight; const bw = 200, bh = 228;
+  let left = clientX + 18; let top  = clientY - bh / 2;
+  if (left + bw > vw - 8) left = clientX - bw - 18;
+  if (top  < 8)           top  = 8;
+  if (top  + bh > vh - 8) top  = vh - bh - 8;
+  bubble.style.left = left + 'px'; bubble.style.top  = top  + 'px';
+}
+
+function hideBubble() { bubble.style.display = 'none'; bubbleImg.src = ''; bubbleImg.style.display = 'none'; const ld = bubble.querySelector('.bub-loading'); if (ld) ld.style.display = 'none'; }
+document.addEventListener('click', (e) => { if (!e.target.classList.contains('vcell')) hideBubble(); });
+
+function openEdit(rowNum) {
+  if (!SESSION.canEdit) { showToast('您的账号为只读权限，无法编辑','error'); return; }
+  const t = allTransactions.find(x => x.rowNum === rowNum); if (!t) return;
+  currentEditRow = t; document.getElementById('edit-rownum').value  = rowNum; document.getElementById('edit-date').value    = t.date; document.getElementById('edit-type').value    = t.type; document.getElementById('edit-amount').value  = t.amount; document.getElementById('edit-summary').value = t.summary; document.getElementById('edit-status').value  = t.status;
+  const catSel = document.getElementById('edit-cat'); catSel.innerHTML = categories.map(c=>`<option ${c===t.category?'selected':''}>${c}</option>`).join(''); catSel.value = t.category;
+  openModal('edit-modal');
+}
+
+async function saveEdit() {
+  if (!SESSION.canEdit) { showToast('无编辑权限','error'); return; }
+  const rn = parseInt(document.getElementById('edit-rownum').value); const t  = allTransactions.find(x => x.rowNum === rn); if (!t) return;
+  t.date = document.getElementById('edit-date').value; t.type = document.getElementById('edit-type').value; t.category = document.getElementById('edit-cat').value; t.amount = parseFloat(document.getElementById('edit-amount').value) || 0; t.summary = document.getElementById('edit-summary').value; t.status = document.getElementById('edit-status').value;
+  closeModal('edit-modal');
+  const row = [t.date, t.month, t.type, t.category, t.amount, t.summary, t.source, '', t.status, '', t.voucherIds];
+  try {
+    const res = await api('POST', { action:'update_row', rowNum:rn, row });
+    if (!res.ok) throw new Error(res.error);
+    showToast('已保存','success'); filterLedger();
+  } catch(e) { showToast('保存失败：'+e.message,'error'); }
+}
+
+function openDel(rowNum) { if (!SESSION.canEdit) { showToast('您的账号为只读权限，无法删除','error'); return; } currentDelRow = rowNum; openModal('del-modal'); }
+
+async function confirmDel() {
+  if (!SESSION.canEdit) { showToast('无删除权限','error'); return; }
+  closeModal('del-modal');
+  try {
+    const res = await api('POST', { action:'delete_row', rowNum:currentDelRow });
+    if (!res.ok) throw new Error(res.error);
+    allTransactions = allTransactions.filter(t => t.rowNum !== currentDelRow); filteredTransactions = filteredTransactions.filter(t => t.rowNum !== currentDelRow);
+    renderLedger(); updateDash(); showToast('已删除','success');
+  } catch(e) { showToast('删除失败：'+e.message,'error'); }
+}
+
+function showVouchers(rowNum, ids) {
+  document.getElementById('voucher-modal-title').textContent = `🖼 第 ${rowNum} 行凭证（共 ${ids.length} 张）`;
+  const body = document.getElementById('voucher-modal-body');
+  body.innerHTML = ids.map((id, i) => `
+    <div style="text-align:center" id="vc-wrap-${i}">
+      <div id="vc-loading-${i}" style="width:260px;height:200px;background:#f5f5f5;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-light);font-size:12px;flex-direction:column;gap:8px">
+        <div style="width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite"></div>加载中…
+      </div>
+      <img id="vc-img-${i}" src="" style="display:none;max-width:260px;max-height:280px;object-fit:contain;border-radius:8px;border:1px solid var(--border);cursor:zoom-in">
+      <div style="font-size:11px;color:var(--ink-light);margin-top:4px;max-width:260px;word-break:break-all">${id.slice(0,16)}…</div>
+    </div>
+  `).join('');
+  openModal('voucher-modal');
+  ids.forEach(async (id, i) => {
+    try {
+      const src = await getImgSrc(id); const img = document.getElementById('vc-img-' + i); const lod = document.getElementById('vc-loading-' + i); if (!img) return;
+      img.src = src; img.style.display = 'block'; img.onclick = () => window.open('https://drive.google.com/file/d/' + id + '/view', '_blank'); if (lod) lod.style.display = 'none';
+    } catch(e) {
+      const lod = document.getElementById('vc-loading-' + i);
+      if (lod) { lod.style.flexDirection = 'column'; lod.innerHTML = '<div style="font-size:20px">⚠️</div><div style="font-size:11px;color:var(--red-txt);text-align:center;padding:0 8px">' + (e.message || '加载失败') + '</div>'; }
+    }
+  });
+}
+
+function exportCSV() {
+  const header = '日期,归属月份,类型,分类,金额,摘要,录入来源,核对状态\n';
+  const rows   = filteredTransactions.map(t => [t.date,t.month,t.type,t.category,t.amount,`"${t.summary}"`,t.source,t.status].join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+header+rows],{type:'text/csv;charset=utf-8'}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `对账管理_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+}
+
+let pinBuffer = ''; let proUnlocked = false;
+function openPro() { showScreen('pro'); if (!proUnlocked) { showEl('pro-lock'); document.getElementById('pro-dashboard').style.display = 'none'; pinBuffer = ''; updatePinDots(); } }
+function closePro() { showScreen('app'); }
+function pinInput(d) { if (pinBuffer.length >= 8) return; pinBuffer += d; updatePinDots(); if (pinBuffer.length === 8) setTimeout(() => window._verifyPin(), 100); }
+function pinDelete() { pinBuffer = pinBuffer.slice(0,-1); updatePinDots(); document.getElementById('pin-error').textContent = ''; }
+function updatePinDots() { for (let i=0; i<8; i++) document.getElementById('pd-'+i).classList.toggle('filled', i < pinBuffer.length); }
+async function verifyPinWithBackend(pin) { try { const res = await api('GET', { action:'verify_pro_pin', pin }); if (res.ok && res.valid) { unlockPro(); } else { pinFail(); } } catch(e) { pinFail(); } }
+function unlockPro() { proUnlocked = true; hideEl('pro-lock'); document.getElementById('pro-dashboard').style.display = 'block'; showProMain(); document.getElementById('pin-error').textContent = ''; }
+function pinFail() { document.getElementById('pin-error').textContent = '密码错误，请重试'; document.getElementById('pin-dots').classList.add('pin-shake'); setTimeout(() => { document.getElementById('pin-dots').classList.remove('pin-shake'); pinBuffer = ''; updatePinDots(); }, 500); }
+function showProMain() { document.getElementById('pro-main').style.display = 'block'; document.querySelectorAll('.pro-panel').forEach(p => p.classList.remove('active')); }
+function openProPanel(name) { document.getElementById('pro-main').style.display = 'none'; document.querySelectorAll('.pro-panel').forEach(p => p.classList.remove('active')); document.getElementById('pro-panel-'+name).classList.add('active'); }
+function closeProPanel() { showProMain(); }
+
+async function runNLP() {
+  const text = document.getElementById('nlp-text').value.trim(); if (!text) { showToast('请先输入内容','error'); return; }
+  const btn = document.getElementById('nlp-btn'); document.getElementById('nlp-btn-text').textContent = '解析中…'; btn.disabled = true;
+  try {
+    const res = await api('POST', { action:'gemini_nlp', text });
+    if (!res.ok) throw new Error(res.error);
+    pendingNLPItems = res.items; renderNLPPreview(res.items);
+  } catch(e) { showToast('AI 解析失败：'+e.message,'error'); } finally { document.getElementById('nlp-btn-text').textContent = '🚀 AI 解析'; btn.disabled = false; }
+}
+function renderNLPPreview(items) {
+  document.getElementById('nlp-tbody').innerHTML = items.map((item,i) => `<tr><td><input type="date" value="${item.date}" onchange="pendingNLPItems[${i}].date=this.value" style="border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--sans)"></td><td><select onchange="pendingNLPItems[${i}].type=this.value" style="border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--sans)"><option ${item.type==='支出'?'selected':''}>支出</option><option ${item.type==='收入'?'selected':''}>收入</option></select></td><td><select onchange="pendingNLPItems[${i}].category=this.value" style="border:1px solid var(--border);border-radius:5px;padding:3px 6px;font-size:12px;font-family:var(--sans)">${categories.map(c=>`<option ${c===item.category?'selected':''}>${c}</option>`).join('')}</select></td><td class="mono ${item.type==='支出'?'expense':'income'}">¥${Math.abs(item.amount).toFixed(2)}</td><td><input type="text" value="${item.summary}" onchange="pendingNLPItems[${i}].summary=this.value" style="border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:12px;font-family:var(--sans);min-width:100px;width:100%"></td></tr>`).join('');
+  document.getElementById('nlp-preview').classList.add('show');
+}
+function cancelNLP() { document.getElementById('nlp-preview').classList.remove('show'); pendingNLPItems=[]; }
+async function confirmNLP() {
+  if (!pendingNLPItems.length) return; const today = new Date().toISOString().split('T')[0];
+  const rows = pendingNLPItems.map(item => { const month = (item.date||today).slice(0,7); return [item.date||today, month, item.type||'支出', item.category||'其他支出', Math.abs(item.amount||0), item.summary||'', '一句话记账','','未关联','','']; });
+  try {
+    const res = await api('POST', { action:'append_rows', rows });
+    if (!res.ok) throw new Error(res.error);
+    cancelNLP(); document.getElementById('nlp-text').value = ''; showToast(`✅ 已记录 ${rows.length} 笔账目`,'success'); pageLoaded.ledger = false; loadLedger();
+  } catch(e) { showToast('写入失败：'+e.message,'error'); }
+}
+function fillChip(el) { document.getElementById('nlp-text').value = el.textContent; }
+
+function handleOCRDrop(e) { e.preventDefault(); document.getElementById('ocr-zone').classList.remove('over'); processOCRFiles(Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'))); }
+function handleOCRFiles(e) { processOCRFiles(Array.from(e.target.files)); e.target.value = ''; }
+async function processOCRFiles(files) {
+  for (const file of files) {
+    const id = Date.now() + Math.random(); const url = URL.createObjectURL(file); const item = { id, file, url, uploadStatus:'uploading', fileId:null, aiData:null, ocrStatus:'pending', error:null };
+    ocrQueue.push(item); renderOCRQueue();
+    try {
+      const base64 = await fileToBase64(file);
+      const upRes  = await api('POST', { action: 'upload_image', base64, mime: file.type, filename: file.name });
+      if (!upRes.ok) throw new Error('上传失败：' + upRes.error);
+      item.fileId = upRes.fileId; item.thumbnailUrl = upRes.thumbnailUrl; item.uploadStatus = 'done'; renderOCRQueue();
+      item.ocrStatus = 'analyzing'; renderOCRQueue();
+      const ocrRes = await api('POST', { action:'gemini_ocr', base64, mime: file.type });
+      item.aiData = ocrRes.ok ? ocrRes.aiData : null; item.ocrStatus = ocrRes.ok ? 'done' : 'error'; item.error = ocrRes.ok ? null : ocrRes.error;
+    } catch(e) { item.uploadStatus = 'error'; item.ocrStatus = 'error'; item.error = e.message; }
+    renderOCRQueue();
+  }
+}
+function renderOCRQueue() {
+  const el = document.getElementById('ocr-queue'); if (!ocrQueue.length) { el.innerHTML=''; return; }
+  el.innerHTML = ocrQueue.map((item, idx) => {
+    const ai = item.aiData; let statusHtml = '';
+    if (item.uploadStatus === 'uploading') { statusHtml = '<span style="color:var(--ink-light)">⬆️ 上传到 Drive 中…</span>'; } else if (item.uploadStatus === 'error') { statusHtml = `<span style="color:var(--red-txt)">❌ ${item.error}</span>`; } else {
+      const uploadInfo = item.fileId ? `<span style="color:var(--green-txt);font-size:11px">✅ 已保存 Drive: ${item.fileId.slice(0,10)}…</span>` : '';
+      const ocrInfo = item.ocrStatus === 'analyzing' ? '<span style="color:var(--ink-light)"> &nbsp;🤖 OCR 识别中…</span>' : item.ocrStatus === 'error' ? `<span style="color:var(--red-txt)"> &nbsp;❌ OCR失败: ${item.error}</span>` : ai ? `<br><strong>商户：</strong>${ai.merchant||'?'} &nbsp;<strong>金额：</strong>¥${ai.amount||'?'} &nbsp;<strong>摘要：</strong>${ai.summary||'—'}` : '';
+      statusHtml = uploadInfo + ocrInfo;
+    }
+    const actions = (item.ocrStatus === 'done' && item.fileId) ? `<div style="display:flex;gap:7px;margin-top:9px;flex-wrap:wrap"><button class="btn btn-green btn-sm" onclick="ocrCreateRecord(${idx})">➕ 存为新账并绑定</button><button class="btn btn-danger btn-sm" onclick="ocrRemove(${idx})">🗑 跳过</button></div>` : (item.uploadStatus==='error' ? `<button class="btn btn-danger btn-sm" style="margin-top:8px" onclick="ocrRemove(${idx})">移除</button>` : '');
+    return `<div style="display:flex;gap:12px;align-items:flex-start;padding:14px;background:#fff;border-radius:10px;box-shadow:var(--shadow);margin-bottom:10px"><img id="ocr-thumb-${idx}" src="${item.url}" style="width:72px;height:72px;object-fit:cover;border-radius:7px;border:1px solid var(--border);cursor:pointer;flex-shrink:0;background:#f5f5f5" onclick="window.open('${item.fileId ? 'https://drive.google.com/file/d/'+item.fileId+'/view' : item.url}','_blank')"><div style="flex:1;min-width:0"><div style="font-weight:500;font-size:13px;margin-bottom:5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.file.name}</div><div style="font-size:12px;color:var(--ink-light);line-height:1.7">${statusHtml}</div>${actions}</div></div>`;
+  }).join('');
+  ocrQueue.forEach((item, idx) => {
+    if (item.fileId && IMG_CACHE.has(item.fileId)) { const img = document.getElementById('ocr-thumb-' + idx); if (img) img.src = IMG_CACHE.get(item.fileId); } else if (item.fileId) { getImgSrc(item.fileId).then(src => { const img = document.getElementById('ocr-thumb-' + idx); if (img) img.src = src; }).catch(() => {}); }
+  });
+}
+async function ocrCreateRecord(idx) {
+  const item = ocrQueue[idx]; const ai = item.aiData; if (!ai || !item.fileId) return;
+  const today = new Date().toISOString().split('T')[0]; const date = ai.date || today; const month = date.slice(0,7);
+  const row = [date, month, '支出','其他支出', ai.amount||0, ai.summary||ai.merchant||'', '扫描上传','','未关联','', 'v:'+item.fileId];
+  try { const res = await api('POST', { action:'append_rows', rows:[row] }); if (!res.ok) throw new Error(res.error); ocrQueue.splice(idx, 1); renderOCRQueue(); showToast('✅ 已从凭证创建账目，Drive ID 已绑定','success'); pageLoaded.ledger = false; } catch(e) { showToast('写入失败：'+e.message,'error'); }
+}
+function ocrRemove(idx) { ocrQueue.splice(idx,1); renderOCRQueue(); }
+
+async function runMigrate() {
+  document.getElementById('migrate-status').textContent = '⏳ 迁移中，请稍候…';
+  try { const res = await api('POST', { action:'migrate_vouchers' }); if (!res.ok) throw new Error(res.error); document.getElementById('migrate-status').innerHTML = `✅ 完成：迁移 <strong>${res.migrated}</strong> 行，跳过 ${res.skipped} 行`; showToast('迁移完成','success'); } catch(e) { document.getElementById('migrate-status').textContent = '❌ 失败：'+e.message; showToast('迁移失败：'+e.message,'error'); }
+}
+
+function showEl(id){ const e=document.getElementById(id); if(e) e.style.display='block'; }
+function hideEl(id){ const e=document.getElementById(id); if(e) e.style.display='none'; }
+function openModal(id)  { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.querySelectorAll('.modal-overlay').forEach(el => { el.addEventListener('click', e => { if(e.target===el) el.classList.remove('show'); }); });
+function showToast(msg, type='info') { const c = document.getElementById('toast-wrap'); const t = document.createElement('div'); t.className = 'toast '+type; t.textContent = msg; c.appendChild(t); setTimeout(() => t.remove(), 4000); }
+async function fileToBase64(file) { return new Promise((res,rej) => { const r = new FileReader(); r.onload = e => res(e.target.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(file); }); }
+</script>
+</body>
+</html>

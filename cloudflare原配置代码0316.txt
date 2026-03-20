@@ -1,0 +1,67 @@
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz-m8GuPED56ezJ4MvlNC_kqxcuZ4oFXFTmnR5yIQE01wbOKF_rh_34mICwMVYAblwX/exec";
+
+export default {
+  async fetch(request, env, ctx) {
+    // 1. 处理跨域预检请求 (雷打不动)
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+          "Access-Control-Allow-Headers": "*",
+          "Access-Control-Max-Age": "86400",
+        }
+      });
+    }
+
+    let url = new URL(request.url);
+    let targetUrl = new URL(SCRIPT_URL);
+
+    // 拼接参数
+    url.searchParams.forEach((value, key) => {
+      targetUrl.searchParams.append(key, value);
+    });
+
+    // ==========================================
+    // 🔥 核心加速引擎：Cloudflare 边缘缓存 API
+    // ==========================================
+    const cache = caches.default;
+    // 用目标网址作为“记忆档案”的编号
+    const cacheKey = new Request(targetUrl.toString(), request);
+    let response;
+
+    // 2. 只有“读取(GET)”操作才使用缓存（看账单、看图片）
+    if (request.method === "GET") {
+      response = await cache.match(cacheKey);
+      if (response) {
+        // ⚡ 命中缓存！不用麻烦 Google 了，直接光速返回
+        let newResponse = new Response(response.body, response);
+        newResponse.headers.set("Access-Control-Allow-Origin", "*");
+        newResponse.headers.set("X-Cache-Status", "HIT"); // 打个标签，证明是秒开的
+        return newResponse;
+      }
+    }
+
+    // 3. 如果是第一次看，或者是在“写入(POST)”新账单，那就老老实实找 Google
+    let newRequest = new Request(targetUrl.toString(), {
+      method: request.method,
+      headers: request.headers,
+      body: request.body,
+      redirect: "follow"
+    });
+
+    response = await fetch(newRequest);
+    let newResponse = new Response(response.body, response);
+    newResponse.headers.set("Access-Control-Allow-Origin", "*");
+
+    // 4. 把 Google 辛苦找出来的数据存到缓存里，记住 180 秒（3 分钟）
+    if (request.method === "GET" && response.status === 200) {
+      newResponse.headers.set("Cache-Control", "public, max-age=180");
+      newResponse.headers.set("X-Cache-Status", "MISS"); 
+      // 把备份塞进内存，ctx.waitUntil 保证这步不拖慢当前用户的速度
+      ctx.waitUntil(cache.put(cacheKey, newResponse.clone()));
+    }
+
+    return newResponse;
+  }
+};

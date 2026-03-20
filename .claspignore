@@ -1,0 +1,12 @@
+# 忽略所有文本文件，不推送到谷歌云
+**/*.txt
+**/*.md
+**/*.zip
+
+# 忽略本地配置文件
+.clasp.json
+.gitignore
+.cursorrules
+
+# 忽略 Git 文件夹
+.git/
